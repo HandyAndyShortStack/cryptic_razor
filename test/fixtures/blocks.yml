@@ -1,0 +1,11 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  sandbox_id: 1
+  uuid: MyString
+  attrs: MyText
+
+two:
+  sandbox_id: 1
+  uuid: MyString
+  attrs: MyText
