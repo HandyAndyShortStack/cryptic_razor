@@ -1,6 +1,6 @@
 require "spec_helper"
  
-models = [User, Site]
+models = [User, Site, Page]
 
 models.each do |model|
   describe model do
