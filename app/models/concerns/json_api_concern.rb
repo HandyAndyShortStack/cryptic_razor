@@ -10,6 +10,10 @@ module JsonApiConcern
     def api_attr *args
       self.api_attrs = args
     end
+
+    def linked_records
+      self.reflect_on_all_associations.map(&:name).uniq
+    end
   end
 
   def to_json_api
@@ -22,6 +26,11 @@ module JsonApiConcern
         }.merge(api_attr_hash).merge(_attrs)
       ]
     })
+  end
+
+  def to_json_api_link
+    _id = self.respond_to?(:uuid) ? self.uuid : self.id
+    HashWithIndifferentAccess.new({ id: _id })
   end
 
   def api_attr_hash

@@ -26,6 +26,23 @@ describe JsonApiConcern do
     end
   end
 
+  describe "#to_json_api_link" do
+
+    it "returns a hash with indifferent access" do
+      expect(model.to_json_api_link.class).to be(HashWithIndifferentAccess)
+    end
+
+    it "sets the id property to the database id if no uuid is present" do
+      expect(model).not_to respond_to(:uuid)
+      expect(model.to_json_api_link[:id]).to eq(model.id)
+    end
+
+    it "sets the id property uuid if the uuid property is present" do
+      model.stub uuid: "uniqueid"
+      expect(model.to_json_api_link[:id]).to eq(model.uuid)
+    end
+  end
+
   describe "::api_attr" do
 
     it "causes the json api hash to include the specified attribute" do
