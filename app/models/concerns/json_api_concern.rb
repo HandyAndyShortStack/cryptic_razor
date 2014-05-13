@@ -33,7 +33,12 @@ module JsonApiConcern
     end
 
     def patch_from_api hsh
-      find_from_api(hsh).update_attributes(parse_attributes hsh)
+      model = find_from_api(hsh)
+      new_attrs = parse_attributes hsh
+      if new_attrs[:attrs]
+        new_attrs[:attrs] = model.attrs.merge(new_attrs[:attrs]) 
+      end
+      model.update_attributes(new_attrs)
     end
 
     def find_from_api hsh
