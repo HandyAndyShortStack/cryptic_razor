@@ -21,6 +21,56 @@ module JsonApiConcern
       end
       { singular: singular.map(&:name), plural: plural.map(&:name) }
     end
+
+    def post_from_api hsh
+      self.create(parse_attributes hsh)
+    end
+
+    def put_from_api hsh
+      model = find_from_api(hsh)
+      model.clear_api_attributes
+      model.update_attributes(parse_attributes hsh)
+    end
+
+    def patch_from_api hsh
+      find_from_api(hsh).update_attributes(parse_attributes hsh)
+    end
+
+    def find_from_api hsh
+      if self.respond_to? :find_by_uuid
+        self.find_by_uuid(hsh[:id])
+      else
+        self.find(hsh[:id])
+      end
+    end
+
+    def parse_attributes hsh
+      hsh = HashWithIndifferentAccess.new(hsh)
+      attrs = HashWithIndifferentAccess.new
+      if self.new.respond_to? :uuid && hsh[:id]
+        attrs[:uuid] = hsh[:id]
+      end
+      hsh.delete(:id)
+      if self.api_attrs
+        self.api_attrs.each do |sym|
+          next unless hsh[sym]
+          attrs[sym] = hsh[sym]
+          hsh.delete(sym)
+        end
+      end
+      attrs[:attrs] = hsh if self.new.respond_to? :attrs
+      attrs
+    end
+  end
+
+  def clear_api_attributes
+    self.attrs = {} if self.respond_to :attrs
+    if self.class.api_attrs
+      self.class.api_attrs.each do |sym|
+        self.send "#{sym}=".to_sym, nil
+      end
+    end
+    self.save
   end
 
   def to_json_api

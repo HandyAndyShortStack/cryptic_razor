@@ -15,12 +15,12 @@ describe JsonApiConcern do
 
   after(:all) { ActiveRecord::Migration.drop_table :api_models }
 
-  let(:model) { ApiModel.new }
+  let(:model) { ApiModel.create }
 
   describe "#to_json_api" do
 
     it "returns a hash with indifferent access" do
-      expect(model.to_json_api.class).to be(HashWithIndifferentAccess)
+      expect(model.to_json_api).to be_a(HashWithIndifferentAccess)
     end
 
     it "sets the id property to the database id if no uuid is present" do
@@ -54,7 +54,7 @@ describe JsonApiConcern do
         ActiveRecord::Migration.drop_table :other_api_models
       end
 
-      let(:other_model) { OtherApiModel.new }
+      let(:other_model) { OtherApiModel.create }
 
       it "includes singular links for belongs_to associations" do
         OtherApiModel.belongs_to :model
@@ -89,7 +89,7 @@ describe JsonApiConcern do
   describe "#to_json_api_link" do
 
     it "returns a hash with indifferent access" do
-      expect(model.to_json_api_link.class).to be(HashWithIndifferentAccess)
+      expect(model.to_json_api_link).to be_a(HashWithIndifferentAccess)
     end
 
     it "sets the id property to the database id if no uuid is present" do
@@ -118,6 +118,40 @@ describe JsonApiConcern do
       model.stub api_attribute: "value", other_api_attribute: "value"
       expect(model.to_json_api[:api_models][0][:api_attribute]).to eq("value")
       expect(model.to_json_api[:api_models][0][:other_api_attribute]).to eq("value")
+    end
+  end
+
+  describe "::parse_attributes" do
+
+    before :each do
+      ApiModel.any_instance.stub respond_to?: true
+      ApiModel.api_attr :api_attribute
+    end
+    after(:each) { ApiModel.api_attrs = nil }
+
+    let(:input) do
+      {
+        id: "95f67ab7-92a8-4e02-8e10-af67880f1196",
+        api_attribute: "db value",
+        attrs_attribute: "serialized value"
+      }
+    end
+    let(:output) { ApiModel.parse_attributes input }
+
+    it "returns a hash with indifferent access" do
+      expect(output).to be_a(HashWithIndifferentAccess)
+    end
+
+    it "sets id of input to uuid of output if the model has a uuid column" do
+      expect(output[:uuid]).to eq(input[:id])
+    end
+
+    it "sets api_attr attributes on the top level of the hash" do
+      expect(output[:api_attribute]).to eq(input[:api_attribute])
+    end
+
+    it "puts the rest in the attrs hash if the model includes one" do
+      expect(output[:attrs]).to eq({"attrs_attribute" => "serialized value"})
     end
   end
 end
