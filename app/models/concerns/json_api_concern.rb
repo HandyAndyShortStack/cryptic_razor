@@ -41,8 +41,13 @@ module JsonApiConcern
       model.update_attributes(new_attrs)
     end
 
+    def delete_from_api hsh
+      find_from_api(hsh).destroy
+    end
+
     def find_from_api hsh
-      if self.respond_to? :find_by_uuid
+      hsh = HashWithIndifferentAccess.new(hsh)
+      if self.new.respond_to? :find_by_uuid
         self.find_by_uuid(hsh[:id])
       else
         self.find(hsh[:id])
@@ -69,7 +74,7 @@ module JsonApiConcern
   end
 
   def clear_api_attributes
-    self.attrs = {} if self.respond_to :attrs
+    self.attrs = {} if self.respond_to? :attrs
     if self.class.api_attrs
       self.class.api_attrs.each do |sym|
         self.send "#{sym}=".to_sym, nil

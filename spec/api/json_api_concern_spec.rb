@@ -7,9 +7,6 @@ describe JsonApiConcern do
     ActiveRecord::Migration.create_table :api_models
     class ApiModel < ActiveRecord::Base
       include JsonApiConcern
-      def id
-        nil
-      end
     end
   end
 
@@ -44,9 +41,6 @@ describe JsonApiConcern do
         ActiveRecord::Migration.create_table :other_api_models
         class OtherApiModel < ActiveRecord::Base
           include JsonApiConcern
-          def id
-            nil
-          end
         end
       end
       after(:each) do
@@ -152,6 +146,61 @@ describe JsonApiConcern do
 
     it "puts the rest in the attrs hash if the model includes one" do
       expect(output[:attrs]).to eq({"attrs_attribute" => "serialized value"})
+    end
+  end
+
+  describe "http methods" do
+
+    shared_examples_for "an http method" do
+      it "uses parsed attributes" do
+        ApiModel.stub(:parse_attributes).and_return(HashWithIndifferentAccess.new)
+        hsh = { id: model.id }
+        ApiModel.send(method_name, hsh)
+        expect(ApiModel).to have_received(:parse_attributes).with(hsh)
+      end
+    end
+
+    describe "::post_from_api" do
+      let(:method_name) { :post_from_api }
+      it_behaves_like "an http method"
+
+      it "creates a new record" do
+        count = ApiModel.count
+        ApiModel.post_from_api({})
+        expect(count + 1).to eq(ApiModel.count)
+      end
+    end
+
+    describe "::put_from_api" do
+      let(:method_name) { :put_from_api }
+      it_behaves_like "an http method"
+
+      it "replaces an existing record" do
+        ApiModel.any_instance.stub :update_attributes
+        expect_any_instance_of(ApiModel).to receive(:update_attributes)
+        ApiModel.put_from_api id: model.id
+      end
+    end
+
+    describe "::patch_from_api" do
+      let(:method_name) { :patch_from_api }
+      it_behaves_like "an http method"
+
+      it "extends an existing record" do
+        ApiModel.any_instance.stub :update_attributes
+        expect_any_instance_of(ApiModel).to receive(:update_attributes)
+        ApiModel.patch_from_api id: model.id
+      end
+    end
+
+    describe "::delete_from_api" do
+
+      it "destroys a record" do
+        model 
+        count = ApiModel.count
+        ApiModel.delete_from_api id: model.id
+        expect(count - 1).to eq(ApiModel.count)
+      end
     end
   end
 end
