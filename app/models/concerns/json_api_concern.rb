@@ -104,7 +104,7 @@ module JsonApiConcern
     linked_records[:plural].each do |sym|
       links[sym] = self.send(sym).map &:to_json_api_link
     end
-    links.empty? ? {} : { links: links }
+    links.keys.any? { |key| links[key].any? } ? { links: links } : {} 
   end
 
   def to_json_api_link
